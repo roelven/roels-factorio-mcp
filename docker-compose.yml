@@ -1,0 +1,44 @@
+# Factorio "game master" MCP server.
+# Reachable only on 127.0.0.1:8102; put a tunnel or reverse proxy WITH real auth in front of it
+# (e.g. cloudflared + Cloudflare Access). The app itself has no authentication.
+# It may only touch the container named `factorio` (hard-coded in app/docker_api.py).
+services:
+  factorio-mcp:
+    build: .
+    image: factorio-mcp:local
+    container_name: factorio-mcp
+    ports:
+      - "127.0.0.1:8102:8000"
+    environment:
+      # Public hostname(s) clients will use, comma-separated (used for DNS-rebinding
+      # protection and CORS). Empty = localhost only.
+      PUBLIC_HOSTS: factorio-mcp.example.com
+      RCON_HOST: factorio           # the Factorio server container
+      RCON_PORT: "27015"
+      RCON_PW_FILE: /run/secrets/rconpw
+      FACTORIO_DATA: /factorio
+      DOCKER_SOCKET: /var/run/docker.sock
+      STATE_DIR: /state
+      LOG_DIR: /logs
+    volumes:
+      # The Factorio server's data directory (the same one the server container mounts):
+      - /srv/factorio:/factorio
+      # The RCON password file inside that data directory:
+      - /srv/factorio/config/rconpw:/run/secrets/rconpw:ro
+      # Docker socket. Rootless Docker uses /run/user/<uid>/docker.sock instead:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./state:/state
+      - ./logs:/logs
+    networks:
+      - factorio_default    # the network your Factorio server container is on (external)
+    mem_limit: 192m
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  factorio_default:
+    external: true
