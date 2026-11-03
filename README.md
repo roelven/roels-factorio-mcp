@@ -147,3 +147,8 @@ All via environment variables (defaults work with the compose file):
     ├── presets.py          # named Lua snippets
     └── game_guide.md       # the game master guide (resource + prompt)
 ```
+
+## License
+
+[The Unlicense](LICENSE) — released into the public domain. Use it, fork it, sell it, no
+attribution required.
